@@ -13,7 +13,7 @@ if response.status_code == 200:
         f.write(response.content)
     
     # Upload the downloaded image
-    url = 'http://127.0.0.1:8000/upload'
+    url = 'https://ocr-intelpeek-dev-b568.up.railway.app/upload'
     files = {'file': open('image.jpg', 'rb')}
     resp = requests.post(url=url, files=files)
     

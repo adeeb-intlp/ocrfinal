@@ -2,7 +2,7 @@ from fastapi import FastAPI, UploadFile, File
 from OCR import process_image
 
 app = FastAPI()
-
+# calling fastapi
 @app.post("/upload/")
 async def upload_image(file: UploadFile = File(...)):
     try:

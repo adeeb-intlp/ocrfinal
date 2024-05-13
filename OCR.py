@@ -6,6 +6,7 @@ from pdf2image import convert_from_path
 from datetime import datetime, timedelta
 import os
 
+# import os
 
 
 # Set the path to the Tesseract executable
