@@ -48,6 +48,7 @@ def process_image(image_path):
 
 
 
+
 def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
