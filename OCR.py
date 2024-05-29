@@ -94,14 +94,18 @@ def extract_arabic_text_with_boxes_from_image(image_path, lang='ara'):
             # Use Tesseract to recognize text in the ROI
             text = pytesseract.image_to_string(roi, lang=lang, config='--psm 6')
             
+            # Remove newline characters from the extracted text
+            text = text.replace('\n', '')
+            
             # Append the extracted text and bounding box coordinates
-            extracted_text += text.strip() + "\n"
+            extracted_text += text.strip() + " "
             bounding_boxes.append({"text": text.strip(), "coordinates": (x, y, w, h)})
         
         return extracted_text.strip(), bounding_boxes
     
     except Exception as e:
         raise e
+
 
 def extract_name_dob_sex(text):
     name_pattern = r'Name:\s*(.*)'
