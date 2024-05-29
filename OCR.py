@@ -18,6 +18,7 @@ import os
 # pytesseract.pytesseract.tesseract_cmd = '/app/src/tesseract-4.1.0'
 
 def process_image(image_path):
+    print("Defined functions:", globals().keys())  # Print all defined functions
     try:
         # Process the image
         extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path)
@@ -41,13 +42,14 @@ def process_image(image_path):
             return {"success": True, "data": data}
         else:
             # Pass the image to Arabic text extraction function
-            arabic_text, bounding_boxes = extract_text_with_boxes_from_image(image_path, lang='ara')
+            arabic_text, bounding_boxes = extract_arabic_text_from_image(image_path, lang='ara')
             # For now, just display the extracted text
             print("Arabic Text:", arabic_text)
             return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": bounding_boxes}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
 
 def extract_text_with_boxes_from_image(image_path, lang='eng+ara'):
     try:
