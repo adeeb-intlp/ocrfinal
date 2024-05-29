@@ -20,10 +20,9 @@ def process_image(image_path):
         # Process the image
         extracted_text = extract_text_from_image(image_path)
 
-        if extracted_text:
-            # Extract information from the extracted text
+        if "Name" in extracted_text:
+            # Extract information using the existing function
             data = {
-                
                 "extracted_data": {
                     "Name": extract_name_dob_sex(extracted_text)["Name"],
                     "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
@@ -38,10 +37,15 @@ def process_image(image_path):
             }
             return data
         else:
-            return {"error": "Text extraction failed."}
+            # Pass the image to Arabic text extraction function
+            arabic_text = extract_arabic_text_from_image(image_path)
+            # For now, just display the extracted text
+            print("Arabic Text:", arabic_text)
+            return {"error": "Name not detected, Arabic text extracted."}
 
     except Exception as e:
         return {"error": str(e)}
+
 
 def extract_text_from_image(image_path):
     try:
@@ -118,6 +122,21 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
+
+def extract_arabic_text_from_image(image_path, lang='ara'):
+    try:
+        # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
+        image = Image.open(image_path)
+        image = image.resize((image.width * 2, image.height * 2))
+        image = image.convert("L")
+        
+        # Use pytesseract to extract text
+        extracted_text = pytesseract.image_to_string(image, lang=lang, config='--psm 6')
+        
+        return extracted_text.strip()
+    
+    except Exception as e:
+        raise e
 
 
 
