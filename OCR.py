@@ -2,6 +2,7 @@ import os
 import cv2
 import pytesseract
 from PIL import Image
+import numpy as np
 import re
 from datetime import datetime, timedelta
 import json
@@ -29,10 +30,8 @@ def process_image(image_path):
             }
             return {"success": True, "data": data}
         else:
-            # Extract text with bounding boxes since the name was not detected
-            extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path, lang='ara')
             # Process the image for Arabic text extraction
-            arabic_text = extract_arabic_text_from_image(image_path, lang='ara')
+            arabic_text, bounding_boxes = extract_arabic_text_with_boxes_from_image(image_path, lang='ara')
             # Return the extracted Arabic text along with bounding boxes
             return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": bounding_boxes}
 
@@ -95,7 +94,7 @@ def extract_text_from_image(image_path):
     except Exception as e:
         raise e
 
-def extract_arabic_text_from_image(image_path, lang='ara'):
+def extract_arabic_text_with_boxes_from_image(image_path, lang='ara'):
     try:
         # Load the image
         image = cv2.imread(image_path)
@@ -105,16 +104,34 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
         
         # Enhance the image visibility
         gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+        gray = cv2.bilateralFilter(gray, 9, 75, 75)  # Denoise image
         gray = cv2.equalizeHist(gray)
         
-        # Apply additional preprocessing steps for better OCR accuracy
-        gray = cv2.bilateralFilter(gray, 9, 75, 75)  # Denoise image
-        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        # Apply adaptive thresholding
+        binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
         
-        # Use Tesseract to recognize text in the image
-        extracted_text = pytesseract.image_to_string(binary, lang=lang, config='--psm 6')
+        # Find contours of the text regions
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
-        return extracted_text.strip()
+        extracted_text = ""
+        bounding_boxes = []
+        
+        # Iterate through each contour
+        for contour in contours:
+            # Get the bounding box of the contour
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Extract the region of interest (ROI) from the binary image
+            roi = binary[y:y+h, x:x+w]
+            
+            # Use Tesseract to recognize text in the ROI
+            text = pytesseract.image_to_string(roi, lang=lang, config='--psm 6')
+            
+            # Append the extracted text and bounding box coordinates
+            extracted_text += text.strip() + "\n"
+            bounding_boxes.append({"text": text.strip(), "coordinates": (x, y, w, h)})
+        
+        return extracted_text.strip(), bounding_boxes
     
     except Exception as e:
         raise e
@@ -179,16 +196,6 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
-
-# Path to the uploaded image
-image_path = '/mnt/data/nmk_iqama2.jpeg'
-
-# Process the image
-result = process_image(image_path)
-
-# Print the result
-print(json.dumps(result, indent=4, ensure_ascii=False))
-
 
 
 
