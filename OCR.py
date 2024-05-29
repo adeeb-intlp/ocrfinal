@@ -164,11 +164,6 @@ def extract_issuing_place(text):
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
 
-# Process the uploaded image
-image_path = '/mnt/data/nmk_iqama2.jpeg'
-result = process_image(image_path)
-print(json.dumps(result, indent=2, ensure_ascii=False))
-
 
 
 
