@@ -1,7 +1,7 @@
 import os
 import cv2
 import pytesseract
-from PIL import Image
+from PIL import Image, ImageEnhance
 import numpy as np
 import re
 from datetime import datetime, timedelta
@@ -38,54 +38,17 @@ def process_image(image_path):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-def extract_text_with_boxes_from_image(image_path, lang='eng+ara'):
-    try:
-        # Load the image
-        image = cv2.imread(image_path)
-        
-        # Convert the image to grayscale
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        
-        # Enhance the image visibility
-        gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
-        gray = cv2.equalizeHist(gray)
-        
-        # Threshold the image to obtain binary image
-        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        
-        # Find contours of the text regions
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        extracted_text = ""
-        bounding_boxes = []
-        
-        # Iterate through each contour
-        for contour in contours:
-            # Get the bounding box of the contour
-            x, y, w, h = cv2.boundingRect(contour)
-            
-            # Extract the region of interest (ROI) from the binary image
-            roi = binary[y:y+h, x:x+w]
-            
-            # Use Tesseract to recognize text in the ROI
-            text = pytesseract.image_to_string(roi, lang=lang, config='--psm 6')
-            
-            # Append the extracted text and bounding box coordinates
-            extracted_text += text.strip() + "\n"
-            bounding_boxes.append({"text": text.strip(), "coordinates": (x, y, w, h)})
-        
-        return extracted_text.strip(), bounding_boxes
-    
-    except Exception as e:
-        raise e
-
 def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
         image = Image.open(image_path)
         image = image.resize((image.width * 2, image.height * 2))
         image = image.convert("L")
-        
+
+        # Enhance sharpness
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(2.0)
+
         # Use pytesseract to extract text
         extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
         
@@ -110,8 +73,12 @@ def extract_arabic_text_with_boxes_from_image(image_path, lang='ara'):
         # Apply adaptive thresholding
         binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
         
+        # Increase sharpness
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]])
+        sharp = cv2.filter2D(binary, -1, kernel)
+        
         # Find contours of the text regions
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(sharp, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         
         extracted_text = ""
         bounding_boxes = []
@@ -122,7 +89,7 @@ def extract_arabic_text_with_boxes_from_image(image_path, lang='ara'):
             x, y, w, h = cv2.boundingRect(contour)
             
             # Extract the region of interest (ROI) from the binary image
-            roi = binary[y:y+h, x:x+w]
+            roi = sharp[y:y+h, x:x+w]
             
             # Use Tesseract to recognize text in the ROI
             text = pytesseract.image_to_string(roi, lang=lang, config='--psm 6')
@@ -196,6 +163,12 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
+
+# Process the uploaded image
+image_path = '/mnt/data/nmk_iqama2.jpeg'
+result = process_image(image_path)
+print(json.dumps(result, indent=2, ensure_ascii=False))
+
 
 
 
