@@ -17,8 +17,7 @@ import os
 
 # pytesseract.pytesseract.tesseract_cmd = '/app/src/tesseract-4.1.0'
 
-def process_image(image_path):
-    print("Defined functions:", globals().keys())  # Print all defined functions
+def process_image(image_path):  
     try:
         # Process the image
         extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path)
