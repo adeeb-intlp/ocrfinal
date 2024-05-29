@@ -40,11 +40,13 @@ def process_image(image_path):
             }
             return {"success": True, "data": data}
         else:
+            # Process the image with bounding boxes
+            extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path)
             # Pass the image to Arabic text extraction function
             arabic_text = extract_arabic_text_from_image(image_path, lang='ara')
             # For now, just display the extracted text
             print("Arabic Text:", arabic_text)
-            return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": []}
+            return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": bounding_boxes}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
