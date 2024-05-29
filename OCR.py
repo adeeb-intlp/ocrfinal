@@ -2,24 +2,14 @@ import cv2
 import pytesseract
 from PIL import Image
 import re
-import json
-from pdf2image import convert_from_path
 from datetime import datetime, timedelta
-import os
 
-
-
-
-# Set the path to the Tesseract executable
-#pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
-
-# pytesseract.pytesseract.tesseract_cmd = r"Tesseract-OCR\tesseract.exe"
-
-# pytesseract.pytesseract.tesseract_cmd = '/app/src/tesseract-4.1.0'
+# Ensure to set the correct path to the Tesseract executable if necessary
+# pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 def process_image(image_path):
     try:
-        # Process the image
+        # First, try to extract text without bounding boxes
         extracted_text = extract_text_from_image(image_path)
 
         if "Name" in extracted_text:
@@ -40,9 +30,9 @@ def process_image(image_path):
             }
             return {"success": True, "data": data}
         else:
-            # Process the image with bounding boxes
-            extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path)
-            # Pass the image to Arabic text extraction function
+            # Extract text with bounding boxes since the name was not detected
+            extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path, lang='ara')
+            # Process the image for Arabic text extraction
             arabic_text = extract_arabic_text_from_image(image_path, lang='ara')
             # For now, just display the extracted text
             print("Arabic Text:", arabic_text)
@@ -51,8 +41,6 @@ def process_image(image_path):
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-
-
 def extract_text_with_boxes_from_image(image_path, lang='eng+ara'):
     try:
         # Load the image
@@ -60,6 +48,10 @@ def extract_text_with_boxes_from_image(image_path, lang='eng+ara'):
         
         # Convert the image to grayscale
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Enhance the image visibility
+        gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+        gray = cv2.equalizeHist(gray)
         
         # Threshold the image to obtain binary image
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
@@ -99,6 +91,26 @@ def extract_text_from_image(image_path):
         
         # Use pytesseract to extract text
         extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
+        
+        return extracted_text.strip()
+    
+    except Exception as e:
+        raise e
+
+def extract_arabic_text_from_image(image_path, lang='ara'):
+    try:
+        # Load the image
+        image = cv2.imread(image_path)
+        
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Enhance the image visibility
+        gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
+        gray = cv2.equalizeHist(gray)
+        
+        # Use Tesseract to recognize text in the image
+        extracted_text = pytesseract.image_to_string(gray, lang=lang, config='--psm 6')
         
         return extracted_text.strip()
     
@@ -165,22 +177,6 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
-
-def extract_arabic_text_from_image(image_path, lang='ara'):
-    try:
-        # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
-        image = Image.open(image_path)
-        image = image.resize((image.width * 2, image.height * 2))
-        image = image.convert("L")
-        
-        # Use pytesseract to extract text
-        extracted_text = pytesseract.image_to_string(image, lang=lang, config='--psm 6')
-        
-        return extracted_text.strip()
-    
-    except Exception as e:
-        raise e
-
 
 
         
