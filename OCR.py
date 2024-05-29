@@ -1,11 +1,10 @@
+import os
 import cv2
 import pytesseract
 from PIL import Image
 import re
 from datetime import datetime, timedelta
-
-# Ensure to set the correct path to the Tesseract executable if necessary
-# pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+import json
 
 def process_image(image_path):
     try:
@@ -34,8 +33,7 @@ def process_image(image_path):
             extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path, lang='ara')
             # Process the image for Arabic text extraction
             arabic_text = extract_arabic_text_from_image(image_path, lang='ara')
-            # For now, just display the extracted text
-            print("Arabic Text:", arabic_text)
+            # Return the extracted Arabic text along with bounding boxes
             return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": bounding_boxes}
 
     except Exception as e:
@@ -177,6 +175,16 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
+
+# Path to the uploaded image
+image_path = '/mnt/data/nmk_iqama2.jpeg'
+
+# Process the image
+result = process_image(image_path)
+
+# Print the result
+print(json.dumps(result, indent=4, ensure_ascii=False))
+
 
 
         
