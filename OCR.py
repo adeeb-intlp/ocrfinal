@@ -107,8 +107,12 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
         gray = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_LINEAR)
         gray = cv2.equalizeHist(gray)
         
+        # Apply additional preprocessing steps for better OCR accuracy
+        gray = cv2.bilateralFilter(gray, 9, 75, 75)  # Denoise image
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        
         # Use Tesseract to recognize text in the image
-        extracted_text = pytesseract.image_to_string(gray, lang=lang, config='--psm 6')
+        extracted_text = pytesseract.image_to_string(binary, lang=lang, config='--psm 6')
         
         return extracted_text.strip()
     
@@ -184,6 +188,7 @@ result = process_image(image_path)
 
 # Print the result
 print(json.dumps(result, indent=4, ensure_ascii=False))
+
 
 
 
