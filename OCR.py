@@ -1,3 +1,4 @@
+import cv2
 import pytesseract
 from PIL import Image
 import re
@@ -5,7 +6,7 @@ import json
 from pdf2image import convert_from_path
 from datetime import datetime, timedelta
 import os
-import cv2
+
 
 
 
@@ -19,7 +20,7 @@ import cv2
 def process_image(image_path):
     try:
         # Process the image
-        extracted_text = extract_text_from_image(image_path)
+        extracted_text, bounding_boxes = extract_text_with_boxes_from_image(image_path)
 
         if "Name" in extracted_text:
             # Extract information using the existing function
@@ -34,18 +35,56 @@ def process_image(image_path):
                     "Occupation": extract_occupation(extracted_text),
                     "Employer": extract_employer(extracted_text),
                     "IssuingPlace": extract_issuing_place(extracted_text)
-                }
+                },
+                "bounding_boxes": bounding_boxes
             }
             return {"success": True, "data": data}
         else:
             # Pass the image to Arabic text extraction function
-            arabic_text = extract_arabic_text_from_image(image_path)
+            arabic_text, bounding_boxes = extract_text_with_boxes_from_image(image_path, lang='ara')
             # For now, just display the extracted text
             print("Arabic Text:", arabic_text)
-            return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}}
+            return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}, "bounding_boxes": bounding_boxes}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+def extract_text_with_boxes_from_image(image_path, lang='eng+ara'):
+    try:
+        # Load the image
+        image = cv2.imread(image_path)
+        
+        # Convert the image to grayscale
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        
+        # Threshold the image to obtain binary image
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        
+        # Find contours of the text regions
+        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        extracted_text = ""
+        bounding_boxes = []
+        
+        # Iterate through each contour
+        for contour in contours:
+            # Get the bounding box of the contour
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Extract the region of interest (ROI) from the binary image
+            roi = binary[y:y+h, x:x+w]
+            
+            # Use Tesseract to recognize text in the ROI
+            text = pytesseract.image_to_string(roi, lang=lang, config='--psm 6')
+            
+            # Append the extracted text and bounding box coordinates
+            extracted_text += text.strip() + "\n"
+            bounding_boxes.append({"text": text.strip(), "coordinates": (x, y, w, h)})
+        
+        return extracted_text.strip(), bounding_boxes
+    
+    except Exception as e:
+        raise e
 
 
 
@@ -126,41 +165,20 @@ def extract_issuing_place(text):
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
 
-def extract_arabic_text_with_boxes(image_path):
-    # Load the image
-    image = cv2.imread(image_path)
+def extract_arabic_text_from_image(image_path, lang='ara'):
+    try:
+        # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
+        image = Image.open(image_path)
+        image = image.resize((image.width * 2, image.height * 2))
+        image = image.convert("L")
+        
+        # Use pytesseract to extract text
+        extracted_text = pytesseract.image_to_string(image, lang=lang, config='--psm 6')
+        
+        return extracted_text.strip()
     
-    # Convert the image to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    
-    # Threshold the image to obtain binary image
-    _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    
-    # Find contours of the text regions
-    contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
-    # Iterate through each contour
-    for contour in contours:
-        # Get the bounding box of the contour
-        x, y, w, h = cv2.boundingRect(contour)
-        
-        # Extract the region of interest (ROI) from the binary image
-        roi = binary[y:y+h, x:x+w]
-        
-        # Use Tesseract to recognize text in the ROI
-        text = pytesseract.image_to_string(roi, lang='ara', config='--psm 6')
-        
-        # Print the extracted text and bounding box coordinates
-        print("Text:", text)
-        print("Bounding Box:", (x, y, w, h))
-        
-        # Draw the bounding box on the original image
-        cv2.rectangle(image, (x, y), (x + w, y + h), (0, 255, 0), 2)
-        
-    # Display the image with bounding boxes
-    cv2.imshow("Text Detection", image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    except Exception as e:
+        raise e
 
 
 
