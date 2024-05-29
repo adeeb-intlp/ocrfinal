@@ -35,16 +35,17 @@ def process_image(image_path):
                     "IssuingPlace": extract_issuing_place(extracted_text)
                 }
             }
-            return data
+            return {"success": True, "data": data}
         else:
             # Pass the image to Arabic text extraction function
             arabic_text = extract_arabic_text_from_image(image_path)
             # For now, just display the extracted text
             print("Arabic Text:", arabic_text)
-            return {"error": "Name not detected, Arabic text extracted."}
+            return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}}
 
     except Exception as e:
-        return {"error": str(e)}
+        return {"success": False, "error": str(e)}
+
 
 
 def extract_text_from_image(image_path):
