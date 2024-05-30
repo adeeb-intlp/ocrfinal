@@ -12,7 +12,7 @@ RUN apt update \
 RUN mkdir -p /usr/share/tesseract-ocr/5/tessdata
  
 # Copy the Arabic traineddata file to Tesseract's tessdata directory for version 5
-COPY tessfolder/Arabic.traineddata /usr/share/tesseract-ocr/5/tessdata/Arabic.traineddata
+COPY tessdata/Arabic.traineddata /usr/share/tesseract-ocr/5/tessdata/Arabic.traineddata
  
 # Copy the project files to the working directory
 COPY . /app
