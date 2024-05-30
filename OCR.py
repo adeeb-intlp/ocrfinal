@@ -2,15 +2,19 @@ import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 import re
 import json
+from pdf2image import convert_from_path
 from datetime import datetime, timedelta
 import os
 
-# Function to process the image
+# Set the path to the Tesseract executable
+# pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+# pytesseract.pytesseract.tesseract_cmd = r"Tesseract-OCR\tesseract.exe"
+# pytesseract.pytesseract.tesseract_cmd = '/app/src/tesseract-4.1.0'
+
 def process_image(image_path):
     try:
         # Process the image
         extracted_text = extract_text_from_image(image_path)
-        print("Initial Extracted Text:", extracted_text)
 
         if "Name" in extracted_text:
             # Extract information using the existing function
@@ -30,69 +34,28 @@ def process_image(image_path):
             return {"success": True, "data": data}
         else:
             # Pass the image to Arabic text extraction function
-            crop_box = (0, 0, 1000, 500)  # Define the crop box based on the document layout
-            arabic_text = crop_and_extract(image_path, crop_box)
-            print("Arabic Text After Cropping:", arabic_text)
-
+            arabic_text = extract_arabic_text_from_image(image_path)
+            # For now, just display the extracted text
+            print("Arabic Text:", arabic_text)
             return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-def crop_and_extract(image_path, crop_box):
-    try:
-        # Load the image
-        image = Image.open(image_path)
-
-        # Crop the image and retry extraction
-        cropped_image = image.crop(crop_box)
-        cropped_text = extract_arabic_text(cropped_image)
-        return cropped_text
-
-    except Exception as e:
-        return str(e)
-
-# Function to extract text from image
 def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
         image = Image.open(image_path)
         image = image.resize((image.width * 2, image.height * 2))
         image = image.convert("L")
-
+        
         # Use pytesseract to extract text
         extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
+        
         return extracted_text.strip()
     
     except Exception as e:
         raise e
-
-# Function to extract Arabic text from image
-def extract_arabic_text(image):
-    # Convert to grayscale
-    image = image.convert('L')
-
-    # Apply sharpening filter
-    image = image.filter(ImageFilter.SHARPEN)
-
-    # Enhance contrast
-    enhancer = ImageEnhance.Contrast(image)
-    image = enhancer.enhance(2)
-
-    # Resize the image
-    basewidth = 1200
-    wpercent = (basewidth / float(image.size[0]))
-    hsize = int((float(image.size[1]) * float(wpercent)))
-    image = image.resize((basewidth, hsize), Image.LANCZOS)
-
-    # Binarize the image
-    image = image.point(lambda x: 0 if x < 128 else 255, '1')
-
-    # Perform OCR with custom configurations
-    custom_config = r'--oem 3 --psm 6'
-    extracted_text = pytesseract.image_to_string(image, lang='ara', config=custom_config)
-
-    return extracted_text.strip()
 
 def extract_name_dob_sex(text):
     name_pattern = r'Name:\s*(.*)'
@@ -154,6 +117,41 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
+
+def extract_arabic_text_from_image(image_path, lang='ara'):
+    try:
+        # Load the image
+        image = Image.open(image_path)
+
+        # Convert to grayscale
+        image = image.convert('L')
+
+        # Apply sharpening filter
+        image = image.filter(ImageFilter.SHARPEN)
+
+        # Enhance contrast
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2)
+
+        # Resize the image
+        basewidth = 1200
+        wpercent = (basewidth / float(image.size[0]))
+        hsize = int((float(image.size[1]) * float(wpercent)))
+        image = image.resize((basewidth, hsize), Image.LANCZOS)
+
+        # Binarize the image
+        image = image.point(lambda x: 0 if x < 128 else 255, '1')
+
+        # Perform OCR with custom configurations
+        custom_config = r'--oem 3 --psm 6'
+        extracted_text = pytesseract.image_to_string(image, lang=lang, config=custom_config)
+
+        return extracted_text.strip()
+
+    except Exception as e:
+        raise e
+
+
 
         
 
