@@ -2,11 +2,10 @@ import pytesseract
 from PIL import Image, ImageEnhance, ImageFilter
 import re
 import json
-from pdf2image import convert_from_path
 from datetime import datetime, timedelta
 import os
 
-# Set the path to the Tesseract executable
+# Set the path to the Tesseract executable if needed
 # pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 # pytesseract.pytesseract.tesseract_cmd = r"Tesseract-OCR\tesseract.exe"
 # pytesseract.pytesseract.tesseract_cmd = '/app/src/tesseract-4.1.0'
@@ -46,7 +45,7 @@ def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
         image = Image.open(image_path)
-        image = image.resize((image.width * 2, image.height * 2))
+        image = image.resize((image.width * 2, image.height * 2), Image.LANCZOS)
         image = image.convert("L")
         
         # Use pytesseract to extract text
@@ -146,10 +145,14 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
         custom_config = r'--oem 3 --psm 6'
         extracted_text = pytesseract.image_to_string(image, lang=lang, config=custom_config)
 
-        return extracted_text.strip()
+        # Ensure Arabic numbers are recognized
+        arabic_numbers = re.sub(r'\d', lambda x: chr(0x660 + int(x.group())), extracted_text)
+        
+        return arabic_numbers.strip()
 
     except Exception as e:
         raise e
+
 
 
 
