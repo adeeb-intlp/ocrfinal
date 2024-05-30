@@ -11,8 +11,9 @@ RUN apt update \
 # Create a directory for Tesseract language data for version 5
 RUN mkdir -p /usr/share/tesseract-ocr/5/tessdata
 
-# Copy the Arabic traineddata file to Tesseract's tessdata directory for version 5
+# Copy the traineddata files to Tesseract's tessdata directory for version 5
 COPY tessdata/ara.traineddata /usr/share/tesseract-ocr/5/tessdata/ara.traineddata
+COPY tessdata/eng.traineddata /usr/share/tesseract-ocr/5/tessdata/eng.traineddata
 
 # Set the TESSDATA_PREFIX environment variable
 ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/
@@ -30,3 +31,4 @@ RUN pip3 install uvicorn python-multipart
 # Expose the port and set the entrypoint
 ARG PORT
 CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+
