@@ -10,6 +10,7 @@ def process_image(image_path):
     try:
         # Process the image
         extracted_text = extract_text_from_image(image_path)
+        print("Initial Extracted Text:", extracted_text)
 
         if "Name" in extracted_text:
             # Extract information using the existing function
@@ -31,9 +32,8 @@ def process_image(image_path):
             # Pass the image to Arabic text extraction function
             crop_box = (0, 0, 1000, 500)  # Define the crop box based on the document layout
             arabic_text = crop_and_extract(image_path, crop_box)
+            print("Arabic Text After Cropping:", arabic_text)
 
-            # For now, just display the extracted text
-            print("Arabic Text:", arabic_text)
             return {"success": True, "data": {"extracted_data": None, "arabic_text": arabic_text}}
 
     except Exception as e:
@@ -59,10 +59,9 @@ def extract_text_from_image(image_path):
         image = Image.open(image_path)
         image = image.resize((image.width * 2, image.height * 2))
         image = image.convert("L")
-        
+
         # Use pytesseract to extract text
         extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
-        
         return extracted_text.strip()
     
     except Exception as e:
@@ -84,7 +83,7 @@ def extract_arabic_text(image):
     basewidth = 1200
     wpercent = (basewidth / float(image.size[0]))
     hsize = int((float(image.size[1]) * float(wpercent)))
-    image = image.resize((basewidth, hsize), Image.Resampling.LANCZOS)
+    image = image.resize((basewidth, hsize), Image.LANCZOS)
 
     # Binarize the image
     image = image.point(lambda x: 0 if x < 128 else 255, '1')
@@ -155,14 +154,6 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
-
-# Example usage
-image_path = "/mnt/data/nmk_ara_new.jpg"
-result = process_image(image_path)
-print(result)
-
-
-
 
         
 
