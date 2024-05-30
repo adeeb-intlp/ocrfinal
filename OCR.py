@@ -137,7 +137,7 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
         basewidth = 1200
         wpercent = (basewidth / float(image.size[0]))
         hsize = int((float(image.size[1]) * float(wpercent)))
-        image = image.resize((basewidth, hsize), Image.Resampling.LANCZOS)
+        image = image.resize((basewidth, hsize), Image.LANCZOS)
 
         # Binarize the image
         image = image.point(lambda x: 0 if x < 128 else 255, '1')
@@ -150,6 +150,7 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
 
     except Exception as e:
         raise e
+
 
 
         
