@@ -139,7 +139,7 @@ def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (resize, convert to grayscale, and enhance contrast)
         image = Image.open(image_path)
-        image = image.resize((image.width * 2, image.height * 2), Image.LANCZOS)
+        image = image.resize((image.width * 2, image.height * 2), Image.Resampling.LANCZOS)
         image = image.convert("L")
         
         # Use pytesseract to extract text
@@ -230,7 +230,7 @@ def extract_arabic_text_from_image(image_path, lang='ara'):
         basewidth = 1200
         wpercent = (basewidth / float(image.size[0]))
         hsize = int((float(image.size[1]) * float(wpercent)))
-        image = image.resize((basewidth, hsize), Image.LANCZOS)
+        image = image.resize((basewidth, hsize), Image.Resampling.LANCZOS)
 
         # Binarize the image
         image = image.point(lambda x: 0 if x < 128 else 255, '1')
