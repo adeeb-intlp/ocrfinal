@@ -1,7 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from OCR import process_image
-import os
 
 app = FastAPI()
 
@@ -24,16 +23,11 @@ app.add_middleware(
 async def upload_image(file: UploadFile = File(...)):
     try:
         # Save the uploaded file
-        file_location = f"./{file.filename}"
-        with open(file_location, "wb") as buffer:
+        with open(file.filename, "wb") as buffer:
             buffer.write(await file.read())
 
         # Process the image using OCR
-        result = process_image(file_location)
-
-        # Clean up the saved file
-        os.remove(file_location)
-
-        return result
+        result = process_image(file.filename)
+        return {"success": True, "data": result}
     except Exception as e:
         return {"success": False, "error": str(e)}
