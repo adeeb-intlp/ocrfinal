@@ -76,7 +76,7 @@ def extract_dob(roi_dob):
 def extract_text_from_image(image_path):
     try:
         # Pre-processing for clearer images (convert to grayscale and enhance contrast)
-        image = Image.open(image_path)
+        image = image.open(image_path)
         image = image.convert("L")
         # Use pytesseract to extract text
         extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
