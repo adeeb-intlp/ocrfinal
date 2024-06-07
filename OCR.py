@@ -210,41 +210,8 @@ def extract_issuing_place(text):
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
 
-def extract_arabic_text_from_image(image_path, lang='ara'):
-    try:
-        # Load the image
-        image = Image.open(image_path)
 
-        # Convert to grayscale
-        image = image.convert('L')
 
-        # Apply sharpening filter
-        image = image.filter(ImageFilter.SHARPEN)
-
-        # Enhance contrast
-        enhancer = ImageEnhance.Contrast(image)
-        image = enhancer.enhance(2)
-
-        # Resize the image
-        basewidth = 1200
-        wpercent = (basewidth / float(image.size[0]))
-        hsize = int((float(image.size[1]) * float(wpercent)))
-        image = image.resize((basewidth, hsize), Image.Resampling.LANCZOS)
-
-        # Binarize the image
-        image = image.point(lambda x: 0 if x < 128 else 255, '1')
-
-        # Perform OCR with custom configurations
-        custom_config = r'--oem 3 --psm 6'
-        extracted_text = pytesseract.image_to_string(image, lang=lang, config=custom_config)
-
-        # Ensure Arabic numbers are recognized
-        arabic_numbers = re.sub(r'\d', lambda x: chr(0x660 + int(x.group())), extracted_text)
-        
-        return arabic_numbers.strip()
-
-    except Exception as e:
-        raise e
 
 
 
