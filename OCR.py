@@ -207,13 +207,11 @@ def process_image(image_path):
             # Extract details using the Arabic text extraction function
             id_number, dob, name_text, name_arabic = extract_details(image_path)
             data = {
-                "data": {
                 "IDNumber": id_number,
                 "DateOfBirth": dob,
                 "Name": name_text,
                 "ArabicName": name_arabic
                 }
-            }
             return {"success": True, "data": data}
 
     except Exception as e:
