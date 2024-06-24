@@ -54,7 +54,7 @@ def extract_name(roi_name):
     # Use OCR to extract text from the ROI
     custom_config = r'--oem 3 --psm 6 -l eng+ara'
     name_text = pytesseract.image_to_string(roi_name, config=custom_config)
-    print("Raw Extracted Text for Name:", name_text)  # Debugging line
+    print("Extracted Text for Name:", name_text)  # Debugging line
 
     # Extract Arabic name
     name_arabic = re.findall(r'[\u0600-\u06FF]+ [\u0600-\u06FF]+ [\u0600-\u06FF]+ [\u0600-\u06FF]+', name_text)
@@ -67,7 +67,7 @@ def extract_dob(roi_dob):
 
     # Use OCR to extract text from the ROI
     dob_text = pytesseract.image_to_string(roi_dob, config='--psm 6')
-    print("Raw Extracted Text for DOB:", dob_text)  # Debugging line
+    print("Extracted Text for DOB:", dob_text)  # Debugging line
 
     # Extract and convert Arabic date of birth
     dob_arabic = re.findall(r'[\u0660-\u0669]{4}/[\u0660-\u0669]{2}/[\u0660-\u0669]{2}', dob_text)
@@ -85,10 +85,9 @@ def extract_text_from_image(image_path):
         image = image.convert("L")
         
         # Use pytesseract to extract text
-        extracted_data = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
+        extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
         
-        print("Raw Extracted Text:", extracted_data)  # Print the raw extracted text
-        return extracted_data.strip()
+        return extracted_text.strip()
     
     except Exception as e:
         raise e
@@ -168,11 +167,9 @@ def extract_details(image_path):
 
     # Extract name
     name_text, name_arabic = extract_name(roi_name)
-    print("Raw Extracted Name Text:", name_text)  # Print the raw extracted name text
     
     # Extract DOB
     dob = extract_dob(roi_dob)
-    print("Raw Extracted DOB Text:", dob)  # Print the raw extracted DOB text
 
     # Apply preprocessing to improve OCR accuracy for ID
     roi_id = cv2.GaussianBlur(roi_id, (5, 5), 0)  # Reduce noise with Gaussian Blur
@@ -180,7 +177,6 @@ def extract_details(image_path):
 
     # Use OCR to extract text from each ROI
     id_text = pytesseract.image_to_string(roi_id, config='--psm 6')
-    print("Raw Extracted ID Text:", id_text)  # Print the raw extracted ID text
 
     # Extract required details
     id_number = re.findall(r'\b\d{10}\b', id_text)
@@ -189,24 +185,23 @@ def extract_details(image_path):
 
 def process_image(image_path):
     try:
-        # Extract text from image
-        extracted_data = extract_text_from_image(image_path)
-        print("Raw Extracted Text from Image:", extracted_data)  # Display the raw extracted text
+        # Process the image
+        extracted_text = extract_text_from_image(image_path)
 
-        if "Name" in extracted_data:
+        if "Name" in extracted_text:
             # Extract information using the existing function
             data = {
-                "Name": extract_name_dob_sex(extracted_data)["Name"],
-                "DateOfBirth": extract_name_dob_sex(extracted_data)["DateOfBirth"],
-                "Sex": extract_name_dob_sex(extracted_data)["Sex"],
-                "IDNumber": extract_id_number(extracted_data),
-                "ExpiryDate": extract_expiry_date(extracted_data),
-                "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_data)),
-                "Occupation": extract_occupation(extracted_data),
-                "Employer": extract_employer(extracted_data),
-                "IssuingPlace": extract_issuing_place(extracted_data)
+                    "Name": extract_name_dob_sex(extracted_text)["Name"],
+                    "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
+                    "Sex": extract_name_dob_sex(extracted_text)["Sex"],
+                    "IDNumber": extract_id_number(extracted_text),
+                    "ExpiryDate": extract_expiry_date(extracted_text),
+                    "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
+                    "Occupation": extract_occupation(extracted_text),
+                    "Employer": extract_employer(extracted_text),
+                    "IssuingPlace": extract_issuing_place(extracted_text)
+                
             }
-            print("Extracted Data:", json.dumps(data, indent=2))  # Print the extracted data
             return {"success": True, "data": data}
         else:
             # Extract details using the Arabic text extraction function
@@ -216,13 +211,11 @@ def process_image(image_path):
                 "DateOfBirth": dob,
                 "Name": name_text,
                 "ArabicName": name_arabic
-            }
-            print("Extracted Data:", json.dumps(data, indent=2))  # Print the extracted data
+                }
             return {"success": True, "data": data}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 
 
  
