@@ -202,6 +202,7 @@ def process_image(image_path):
                 "Employer": extract_employer(extracted_text),
                 "IssuingPlace": extract_issuing_place(extracted_text)
             }
+            print("Extracted Data:", json.dumps(data, indent=2))  # Print the extracted data
             return {"success": True, "data": data}
         else:
             # Extract details using the Arabic text extraction function
@@ -212,11 +213,11 @@ def process_image(image_path):
                 "Name": name_text,
                 "ArabicName": name_arabic
             }
+            print("Extracted Data:", json.dumps(data, indent=2))  # Print the extracted data
             return {"success": True, "data": data}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
-
 
  
 
