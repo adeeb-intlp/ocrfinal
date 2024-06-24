@@ -85,10 +85,10 @@ def extract_text_from_image(image_path):
         image = image.convert("L")
         
         # Use pytesseract to extract text
-        extracted_text = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
+        extracted_data = pytesseract.image_to_string(image, lang='eng+ara', config='--psm 6')
         
-        print("Raw Extracted Text:", extracted_text)  # Print the raw extracted text
-        return extracted_text.strip()
+        print("Raw Extracted Text:", extracted_data)  # Print the raw extracted text
+        return extracted_data.strip()
     
     except Exception as e:
         raise e
@@ -190,8 +190,8 @@ def extract_details(image_path):
 def process_image(image_path):
     try:
         # Extract text from image
-        extracted_text = extract_text_from_image(image_path)
-        print("Raw Extracted Text from Image:", extracted_text)  # Display the raw extracted text
+        extracted_data = extract_text_from_image(image_path)
+        print("Raw Extracted Text from Image:", extracted_data)  # Display the raw extracted text
 
         if "Name" in extracted_text:
             # Extract information using the existing function
