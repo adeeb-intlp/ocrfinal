@@ -185,22 +185,22 @@ def extract_details(image_path):
 
 def process_image(image_path):
     try:
-        # Process the image
+        # Extract text from image
         extracted_text = extract_text_from_image(image_path)
+        print("Extracted Text from Image:", extracted_text)  # Display the extracted text
 
         if "Name" in extracted_text:
             # Extract information using the existing function
             data = {
-                    "Name": extract_name_dob_sex(extracted_text)["Name"],
-                    "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
-                    "Sex": extract_name_dob_sex(extracted_text)["Sex"],
-                    "IDNumber": extract_id_number(extracted_text),
-                    "ExpiryDate": extract_expiry_date(extracted_text),
-                    "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
-                    "Occupation": extract_occupation(extracted_text),
-                    "Employer": extract_employer(extracted_text),
-                    "IssuingPlace": extract_issuing_place(extracted_text)
-                
+                "Name": extract_name_dob_sex(extracted_text)["Name"],
+                "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
+                "Sex": extract_name_dob_sex(extracted_text)["Sex"],
+                "IDNumber": extract_id_number(extracted_text),
+                "ExpiryDate": extract_expiry_date(extracted_text),
+                "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
+                "Occupation": extract_occupation(extracted_text),
+                "Employer": extract_employer(extracted_text),
+                "IssuingPlace": extract_issuing_place(extracted_text)
             }
             return {"success": True, "data": data}
         else:
@@ -211,7 +211,7 @@ def process_image(image_path):
                 "DateOfBirth": dob,
                 "Name": name_text,
                 "ArabicName": name_arabic
-                }
+            }
             return {"success": True, "data": data}
 
     except Exception as e:
