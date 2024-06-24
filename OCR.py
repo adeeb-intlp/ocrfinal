@@ -193,18 +193,18 @@ def process_image(image_path):
         extracted_data = extract_text_from_image(image_path)
         print("Raw Extracted Text from Image:", extracted_data)  # Display the raw extracted text
 
-        if "Name" in extracted_text:
+        if "Name" in extracted_data:
             # Extract information using the existing function
             data = {
-                "Name": extract_name_dob_sex(extracted_text)["Name"],
-                "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
-                "Sex": extract_name_dob_sex(extracted_text)["Sex"],
-                "IDNumber": extract_id_number(extracted_text),
-                "ExpiryDate": extract_expiry_date(extracted_text),
-                "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
-                "Occupation": extract_occupation(extracted_text),
-                "Employer": extract_employer(extracted_text),
-                "IssuingPlace": extract_issuing_place(extracted_text)
+                "Name": extract_name_dob_sex(extracted_data)["Name"],
+                "DateOfBirth": extract_name_dob_sex(extracted_data)["DateOfBirth"],
+                "Sex": extract_name_dob_sex(extracted_data)["Sex"],
+                "IDNumber": extract_id_number(extracted_data),
+                "ExpiryDate": extract_expiry_date(extracted_data),
+                "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_data)),
+                "Occupation": extract_occupation(extracted_data),
+                "Employer": extract_employer(extracted_data),
+                "IssuingPlace": extract_issuing_place(extracted_data)
             }
             print("Extracted Data:", json.dumps(data, indent=2))  # Print the extracted data
             return {"success": True, "data": data}
