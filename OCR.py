@@ -183,24 +183,96 @@ def extract_details(image_path):
 
     return id_number[0] if id_number else None, dob, name_text, name_arabic
 
+def extract_passport_details(text):
+    def extract_name(text):
+        name_pattern = r'P<[^<]+<<([^<]+)'  # Regex to match the name pattern after 'P<'
+        name_match = re.search(name_pattern, text)
+        if name_match:
+            name_parts = name_match.group(1).replace('<', ' ').strip()
+            names = ' '.join(name_parts.split())  # Normalize spaces
+            # Ensure the name contains at least two words
+            name_list = names.split()
+            if len(name_list) >= 2:
+                return ' '.join(name_list[:2])  # Return the first two words as the name
+            else:
+                return names  # Return the name as is if it's a single word
+        else:
+            return None
+
+    def extract_gender(text):
+        gender_pattern = r'([MF])\d{7}'  # Regex to match the gender pattern (M or F followed by exactly 7 digits)
+        gender_match = re.search(gender_pattern, text)
+        if gender_match:
+            return gender_match.group(1).strip()
+        else:
+            return None
+
+    def extract_passport_id(text):
+        id_pattern = r'\b([A-Z]\d{7})\b'  # Regex to match the passport ID pattern (1 letter followed by 7 digits)
+        id_match = re.search(id_pattern, text)
+        if id_match:
+            return id_match.group(1).strip()
+        else:
+            return None
+
+    def extract_expiry_date(text):
+        expiry_pattern = r'([MF])(\d{6})\d'  # Regex to match the gender (M/F) followed by 6 digits and 1 insignificant digit
+        expiry_match = re.search(expiry_pattern, text)
+        if expiry_match:
+            expiry_digits = expiry_match.group(2).strip()
+            expiry_digits = expiry_digits.replace('O', '0')  # Replace 'O' with '0'
+            return f"{expiry_digits[4:6]}{expiry_digits[2:4]}{expiry_digits[0:2]}"  # Rearrange digits to DDMMYY format
+        else:
+            return None
+
+    def extract_dob(text):
+        dob_pattern = r'(\d{7}[MF])'  # Regex to match the 7 digits before the gender (M/F)
+        dob_match = re.search(dob_pattern, text)
+        if dob_match:
+            dob_digits = dob_match.group(1)[:-1]  # Exclude the last character (M/F)
+            # Clean non-digit characters, replace 'O' with '0'
+            dob_digits = re.sub(r'[^0-9]', '', dob_digits.replace('O', '0'))
+            if len(dob_digits) == 6:  # Ensure we have exactly 6 digits
+                return f"{dob_digits[0:2]}{dob_digits[2:4]}{dob_digits[4:6]}"  # Rearrange digits to DDMMYY format
+        return None
+
+    return {
+        "ExtractedText": text,
+        "Name": extract_name(text),
+        "Gender": extract_gender(text),
+        "PassportID": extract_passport_id(text),
+        "ExpiryDate": extract_expiry_date(text),
+        "DateOfBirth": extract_dob(text)
+    }
+
 def process_image(image_path):
     try:
         # Process the image
         extracted_text = extract_text_from_image(image_path)
 
-        if "Name" in extracted_text:
+        if "UNITED" in extracted_text:
             # Extract information using the existing function
             data = {
-                    "Name": extract_name_dob_sex(extracted_text)["Name"],
-                    "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
-                    "Sex": extract_name_dob_sex(extracted_text)["Sex"],
-                    "IDNumber": extract_id_number(extracted_text),
-                    "ExpiryDate": extract_expiry_date(extracted_text),
-                    "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
-                    "Occupation": extract_occupation(extracted_text),
-                    "Employer": extract_employer(extracted_text),
-                    "IssuingPlace": extract_issuing_place(extracted_text)
-                
+                "Name": extract_name_dob_sex(extracted_text)["Name"],
+                "DateOfBirth": extract_name_dob_sex(extracted_text)["DateOfBirth"],
+                "Sex": extract_name_dob_sex(extracted_text)["Sex"],
+                "IDNumber": extract_id_number(extracted_text),
+                "ExpiryDate": extract_expiry_date(extracted_text),
+                "IssuingDate": extract_issuing_date(extract_expiry_date(extracted_text)),
+                "Occupation": extract_occupation(extracted_text),
+                "Employer": extract_employer(extracted_text),
+                "IssuingPlace": extract_issuing_place(extracted_text)
+            }
+            return {"success": True, "data": data}
+        elif "REPUBLIC" in extracted_text:
+            # Extract information using the extract_passport_details function
+            passport_details = extract_passport_details(extracted_text)
+            data = {
+                "IDNumber": passport_details["PassportID"],
+                "DateOfBirth": passport_details["DateOfBirth"],
+                "Name": passport_details["Name"],
+                "Sex": passport_details["Gender"],
+                "ExpiryDate": passport_details["ExpiryDate"]
             }
             return {"success": True, "data": data}
         else:
@@ -211,11 +283,13 @@ def process_image(image_path):
                 "DateOfBirth": dob,
                 "Name": name_text,
                 "ArabicName": name_arabic
-                }
+            }
             return {"success": True, "data": data}
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
 
 
  
