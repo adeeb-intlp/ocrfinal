@@ -29,18 +29,6 @@ def adjust_brightness_contrast(image, brightness=0, contrast=0):
 def preprocess_image(image):
     # Adjust brightness and contrast
     image = adjust_brightness_contrast(image, brightness=100, contrast=50)
-    
-    # Apply Gaussian blur
-    image = cv2.GaussianBlur(image, (3, 3), 0)
-    
-    # Apply binary thresholding
-    image = cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-    
-    # Apply morphological operations
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
-    image = cv2.morphologyEx(image, cv2.MORPH_OPEN, kernel)
-    image = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
-    
     return image
 
 def extract_name(roi_name):
