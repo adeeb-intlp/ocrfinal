@@ -172,8 +172,6 @@ def extract_details(image_path):
     dob = extract_dob(roi_dob)
 
     # Apply preprocessing to improve OCR accuracy for ID
-    roi_id = cv2.GaussianBlur(roi_id, (5, 5), 0)  # Reduce noise with Gaussian Blur
-    roi_id = cv2.threshold(roi_id, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
 
     # Use OCR to extract text from each ROI
     id_text = pytesseract.image_to_string(roi_id, config='--psm 6')
