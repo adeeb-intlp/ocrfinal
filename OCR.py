@@ -17,14 +17,14 @@ def arabic_to_english(number):
     }
     return ''.join(arabic_english_map.get(ch, ch) for ch in number)
 
-def extract_name(roi_name):
+def extract_name(image):
     # Apply preprocessing to improve OCR accuracy
-    roi_name = roi_name.convert("L")
-    roi_name = roi_name.point(lambda p: p > 128 and 255)
+    image = image.convert("L")
+    image = image.point(lambda p: p > 128 and 255)
 
     # Use OCR to extract text from the ROI
     custom_config = r'--oem 3 --psm 6 -l eng+ara'
-    name_text = pytesseract.image_to_string(roi_name, config=custom_config)
+    name_text = pytesseract.image_to_string(image, config=custom_config)
     print("Extracted Text for Name:", name_text)  # Debugging line
 
     # Extract Arabic name
@@ -32,13 +32,13 @@ def extract_name(roi_name):
 
     return name_text, name_arabic[0] if name_arabic else None
 
-def extract_dob(roi_dob):
+def extract_dob(image):
     # Preprocess the ROI
-    roi_dob = roi_dob.convert("L")
-    roi_dob = roi_dob.point(lambda p: p > 128 and 255)
+    image = image.convert("L")
+    image = image.point(lambda p: p > 128 and 255)
 
     # Use OCR to extract text from the ROI
-    dob_text = pytesseract.image_to_string(roi_dob, config='--psm 6')
+    dob_text = pytesseract.image_to_string(image, config='--psm 6')
     print("Extracted Text for DOB:", dob_text)  # Debugging line
 
     # Extract and convert Arabic date of birth
@@ -187,6 +187,26 @@ def extract_passport_details(text):
         "DateOfBirth": extract_dob(text)
     }
 
+def extract_details(image):
+    # Define regions of interest (ROI) for ID, DOB, and name based on provided coordinates
+    roi_name = image.crop((650, 130, image.width, 200))  # Expand vertically and to the right for name in Arabic
+    roi_dob = image.crop((300, 300, 600, 350))  # Further adjusted for DOB in Arabic
+    roi_id = image.crop((20, 600, 270, 650))    # Adjusted for ID number in English
+
+    # Extract name
+    name_text, name_arabic = extract_name(roi_name)
+    
+    # Extract DOB
+    dob = extract_dob(roi_dob)
+
+    # Use OCR to extract text from each ROI
+    id_text = pytesseract.image_to_string(roi_id, config='--psm 6')
+
+    # Extract required details
+    id_number = re.findall(r'\b\d{10}\b', id_text)
+
+    return id_number[0] if id_number else None, dob, name_text, name_arabic
+
 def process_image(image_path):
     try:
         # Process the image
@@ -231,6 +251,7 @@ def process_image(image_path):
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
 
 
 
