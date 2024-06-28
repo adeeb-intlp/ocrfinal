@@ -1,11 +1,8 @@
-import cv2
 import pytesseract
 import re
 import json
-import numpy as np
 from PIL import Image
 from datetime import datetime, timedelta
-import os
 
 # Set the path to the Tesseract executable if needed
 # pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
@@ -20,24 +17,10 @@ def arabic_to_english(number):
     }
     return ''.join(arabic_english_map.get(ch, ch) for ch in number)
 
-def adjust_brightness_contrast(image, brightness=0, contrast=0):
-    beta = brightness - 50
-    alpha = contrast / 50.0 + 1.0
-    adjusted = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-    return adjusted
-
-def preprocess_image(image):
-    # Adjust brightness and contrast
-    image = adjust_brightness_contrast(image, brightness=100, contrast=50)
-    return image
-
 def extract_name(roi_name):
-    # Adjust brightness and contrast
-    roi_name = adjust_brightness_contrast(roi_name, brightness=70, contrast=30)
-
     # Apply preprocessing to improve OCR accuracy
-    roi_name = cv2.GaussianBlur(roi_name, (3, 3), 0)
-    roi_name = cv2.threshold(roi_name, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+    roi_name = roi_name.convert("L")
+    roi_name = roi_name.point(lambda p: p > 128 and 255)
 
     # Use OCR to extract text from the ROI
     custom_config = r'--oem 3 --psm 6 -l eng+ara'
@@ -51,7 +34,8 @@ def extract_name(roi_name):
 
 def extract_dob(roi_dob):
     # Preprocess the ROI
-    roi_dob = preprocess_image(roi_dob)
+    roi_dob = roi_dob.convert("L")
+    roi_dob = roi_dob.point(lambda p: p > 128 and 255)
 
     # Use OCR to extract text from the ROI
     dob_text = pytesseract.image_to_string(roi_dob, config='--psm 6')
@@ -140,34 +124,6 @@ def extract_issuing_place(text):
     issuing_place_pattern = r'Issuing\s+Place:\s*(.*)'
     issuing_place_match = re.search(issuing_place_pattern, text)
     return issuing_place_match.group(1).strip() if issuing_place_match else None
-
-def extract_details(image_path):
-    # Load the image
-    image = cv2.imread(image_path)
-
-    # Convert to grayscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-    # Define regions of interest (ROI) for ID, DOB, and name based on provided coordinates
-    roi_name = gray[130:200, 650:gray.shape[1]]  # Expand vertically and to the right for name in Arabic
-    roi_dob = gray[300:350, 300:600]  # Further adjusted for DOB in Arabic
-    roi_id = gray[600:650, 20:270]    # Adjusted for ID number in English
-
-    # Extract name
-    name_text, name_arabic = extract_name(roi_name)
-    
-    # Extract DOB
-    dob = extract_dob(roi_dob)
-
-    # Apply preprocessing to improve OCR accuracy for ID
-
-    # Use OCR to extract text from each ROI
-    id_text = pytesseract.image_to_string(roi_id, config='--psm 6')
-
-    # Extract required details
-    id_number = re.findall(r'\b\d{10}\b', id_text)
-
-    return id_number[0] if id_number else None, dob, name_text, name_arabic
 
 def extract_passport_details(text):
     def extract_name(text):
@@ -263,7 +219,8 @@ def process_image(image_path):
             return {"success": True, "data": data}
         else:
             # Extract details using the Arabic text extraction function
-            id_number, dob, name_text, name_arabic = extract_details(image_path)
+            image = Image.open(image_path)
+            id_number, dob, name_text, name_arabic = extract_details(image)
             data = {
                 "IDNumber": id_number,
                 "DateOfBirth": dob,
