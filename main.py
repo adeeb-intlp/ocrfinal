@@ -6,7 +6,7 @@ app = FastAPI()
 
 # Define the list of allowed origins
 origins = [
-    "https://localhost:44308",
+    "https://clientapp-dev.intelpeek.com",
     # Add other origins if needed
 ]
 
